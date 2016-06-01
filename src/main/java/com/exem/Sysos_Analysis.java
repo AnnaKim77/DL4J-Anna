@@ -34,8 +34,6 @@ public class Sysos_Analysis {
     private static Logger log = LoggerFactory.getLogger(Sysos_Analysis.class);
 
     public static void main(String[] args) throws Exception {
-
-
         // 1. get the dataset
         RecordReader recordReader1 = new CSVRecordReader(1, ",");
         recordReader1.initialize(new FileSplit(new ClassPathResource("sysos.csv").getFile()));
