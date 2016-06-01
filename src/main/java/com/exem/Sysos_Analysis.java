@@ -127,6 +127,7 @@ public class Sysos_Analysis {
         // 4. Prediction
 
 
+
         for (int epoch = 0; epoch < 200; epoch++) {
 
             System.out.println("Epoch : " + epoch);
