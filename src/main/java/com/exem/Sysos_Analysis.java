@@ -14,6 +14,7 @@ import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.conf.layers.GravesLSTM;
 import org.deeplearning4j.nn.conf.layers.RnnOutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
@@ -30,7 +31,7 @@ import java.util.Iterator;
  */
 public class Sysos_Analysis {
 
-    private final static int FEATURES = 20;
+    private final static int tbpttLength = 500;
     private static Logger log = LoggerFactory.getLogger(Sysos_Analysis.class);
 
     public static void main(String[] args) throws Exception {
@@ -100,18 +101,19 @@ public class Sysos_Analysis {
                 .regularization(true).l2(0.01)
                 .list(2)
                 .layer(0, new GravesLSTM.Builder().nIn(numInputs).nOut(outputNum)
-                        .updater(Updater.RMSPROP)
+                        .updater(Updater.NESTEROVS)
                         .activation("tanh")
-//                .weightInit(WeightInit.UNIFORM)
+//                        .weightInit(WeightInit.UNIFORM)
                         .build())
-                .layer(1, new RnnOutputLayer.Builder(LossFunctions.LossFunction.XENT).activation("identity")
-                        .updater(Updater.RMSPROP)
+
+                .layer(1, new RnnOutputLayer.Builder(LossFunctions.LossFunction.MCXENT).activation("identity")
+                        .updater(Updater.NESTEROVS)
                         .nIn(outputNum).nOut(1)
-//                .weightInit(WeightInit.UNIFORM)
+//                        .weightInit(WeightInit.UNIFORM)
                         .build())
                 .backpropType(BackpropType.TruncatedBPTT)
-                .tBPTTBackwardLength(FEATURES)
-                .tBPTTForwardLength(FEATURES)
+                .tBPTTBackwardLength(tbpttLength)
+                .tBPTTForwardLength(tbpttLength)
                 .pretrain(false)
                 .backprop(true)
                 .build();
@@ -123,7 +125,6 @@ public class Sysos_Analysis {
 
 
         // 4. Prediction
-
 
 
         for (int epoch = 0; epoch < 200; epoch++) {
@@ -143,7 +144,7 @@ public class Sysos_Analysis {
             System.out.println("outputvalue : " + output);
 
             for (int j = 0; j < 28000; j++) {
-                System.out.print(Math.round(output.getFloat(0)*100f)/100f + ",");
+                System.out.print(Math.round(output.getFloat(0) * 1000f) / 1000f + ",");
 
                 INDArray nextInput = Nd4j.zeros(1);
                 nextInput = nextInput.putScalar(new int[]{0, 0}, output.getFloat(0));
