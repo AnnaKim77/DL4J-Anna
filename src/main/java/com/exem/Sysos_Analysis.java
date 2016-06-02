@@ -7,10 +7,7 @@ import org.canova.api.util.ClassPathResource;
 import org.deeplearning4j.datasets.canova.RecordReaderDataSetIterator;
 import org.deeplearning4j.datasets.iterator.DataSetIterator;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
-import org.deeplearning4j.nn.conf.BackpropType;
-import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.Updater;
+import org.deeplearning4j.nn.conf.*;
 import org.deeplearning4j.nn.conf.layers.GravesLSTM;
 import org.deeplearning4j.nn.conf.layers.RnnOutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
@@ -94,22 +91,23 @@ public class Sysos_Analysis {
 
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+                .gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue)
                 .iterations(iterations)
                 .seed(seed)
                 .learningRate(0.01)
                 .momentum(0.5)
-                .regularization(true).l2(0.01)
+                .regularization(true).l2(0.001).dropOut(0.5)
                 .list(2)
                 .layer(0, new GravesLSTM.Builder().nIn(numInputs).nOut(outputNum)
                         .updater(Updater.NESTEROVS)
                         .activation("tanh")
-//                        .weightInit(WeightInit.UNIFORM)
+                        .weightInit(WeightInit.XAVIER)
                         .build())
 
-                .layer(1, new RnnOutputLayer.Builder(LossFunctions.LossFunction.MCXENT).activation("identity")
+                .layer(1, new RnnOutputLayer.Builder(LossFunctions.LossFunction.MSE).activation("identity")
                         .updater(Updater.NESTEROVS)
                         .nIn(outputNum).nOut(1)
-//                        .weightInit(WeightInit.UNIFORM)
+                        .weightInit(WeightInit.XAVIER)
                         .build())
                 .backpropType(BackpropType.TruncatedBPTT)
                 .tBPTTBackwardLength(tbpttLength)
