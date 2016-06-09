@@ -13,6 +13,7 @@ import org.deeplearning4j.nn.conf.layers.RnnOutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
+import org.deeplearning4j.ui.weights.HistogramIterationListener;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.factory.Nd4j;
@@ -28,11 +29,14 @@ import java.util.Iterator;
  */
 public class Sysos_Analysis {
 
-    private final static int tbpttLength = 500;
+    private final static int tbpttLength = 1000;
     private static Logger log = LoggerFactory.getLogger(Sysos_Analysis.class);
 
     public static void main(String[] args) throws Exception {
-        // 1. get the dataset
+
+
+        // 1. GET DATASET
+        //1-1. read csv files
         RecordReader recordReader1 = new CSVRecordReader(1, ",");
         recordReader1.initialize(new FileSplit(new ClassPathResource("sysos.csv").getFile()));
         DataSetIterator inputIter = new RecordReaderDataSetIterator(recordReader1, 99999);
@@ -41,6 +45,7 @@ public class Sysos_Analysis {
         recordReader2.initialize(new FileSplit(new ClassPathResource("sysos_lable.csv").getFile()));
         DataSetIterator targetIter = new RecordReaderDataSetIterator(recordReader2, 99999);
 
+        //1-2. convert to array
         ArrayList inputList = new ArrayList();
         while (inputIter.hasNext()) {
             Iterator it = inputIter.next().iterator();
@@ -51,12 +56,10 @@ public class Sysos_Analysis {
         }
 
         INDArray input = Nd4j.zeros(1, 1, inputList.size());
-
         for (int idx = 0; idx < inputList.size(); idx++) {
             input.putScalar(new int[]{0, 0, idx}, Double.parseDouble(inputList.get(idx).toString()));
         }
         System.out.println("input :: " + input);
-
 
         ArrayList targetList = new ArrayList();
         while (targetIter.hasNext()) {
@@ -68,22 +71,19 @@ public class Sysos_Analysis {
         }
 
         INDArray target = Nd4j.zeros(1, 1, targetList.size());
-
         for (int idx = 0; idx < targetList.size(); idx++) {
             target.putScalar(new int[]{0, 0, idx}, Double.parseDouble(targetList.get(idx).toString()));
         }
         System.out.println("target :: " + target);
 
-
+        // 1-3. create training data
         DataSet trainingData = new DataSet(input, target);
         System.out.println("TrainingDataSet");
         System.out.println(trainingData.toString());
 
 
-        // 1-1. Create training data
-
+        // 2. SETUP A MODEL CONFIGURATION
         log.info("Build model....");
-        // 2. setup the model configuration
         final int numInputs = 1;
         int outputNum = 100;
         int iterations = 1;
@@ -91,10 +91,10 @@ public class Sysos_Analysis {
 
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .gradientNormalization(GradientNormalization.ClipElementWiseAbsoluteValue)
+                .gradientNormalization(GradientNormalization.ClipL2PerLayer)
                 .iterations(iterations)
                 .seed(seed)
-                .learningRate(0.01)
+                .learningRate(0.2)
                 .momentum(0.5)
                 .regularization(true).l2(0.001).dropOut(0.5)
                 .list(2)
@@ -103,7 +103,6 @@ public class Sysos_Analysis {
                         .activation("tanh")
                         .weightInit(WeightInit.XAVIER)
                         .build())
-
                 .layer(1, new RnnOutputLayer.Builder(LossFunctions.LossFunction.MSE).activation("identity")
                         .updater(Updater.NESTEROVS)
                         .nIn(outputNum).nOut(1)
@@ -116,15 +115,14 @@ public class Sysos_Analysis {
                 .backprop(true)
                 .build();
 
-        // 3. instantiate the configured network
+
+        // 3. INSTANTIATE THE CONFIGURED NETWORK
         MultiLayerNetwork net = new MultiLayerNetwork(conf);
         net.init();
-        net.setListeners(new ScoreIterationListener(1));
+//        net.setListeners(new ScoreIterationListener(1));
+        net.setListeners(new HistogramIterationListener(10));
 
-
-        // 4. Prediction
-
-
+        // 4. PREDICTION
         for (int epoch = 0; epoch < 200; epoch++) {
 
             System.out.println("Epoch : " + epoch);
@@ -139,7 +137,6 @@ public class Sysos_Analysis {
 
             INDArray output = net.rnnTimeStep(testInit);
 
-            System.out.println("outputvalue : " + output);
 
             for (int j = 0; j < 28000; j++) {
                 System.out.print(Math.round(output.getFloat(0) * 1000f) / 1000f + ",");
