@@ -1,4 +1,4 @@
-package com.exem;
+package examples.RNN;
 
 import org.canova.api.records.reader.RecordReader;
 import org.canova.api.records.reader.impl.CSVRecordReader;
@@ -12,7 +12,6 @@ import org.deeplearning4j.nn.conf.layers.GravesLSTM;
 import org.deeplearning4j.nn.conf.layers.RnnOutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.deeplearning4j.ui.weights.HistogramIterationListener;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
@@ -39,11 +38,11 @@ public class Sysos_Analysis {
         //1-1. read csv files
         RecordReader recordReader1 = new CSVRecordReader(1, ",");
         recordReader1.initialize(new FileSplit(new ClassPathResource("sysos.csv").getFile()));
-        DataSetIterator inputIter = new RecordReaderDataSetIterator(recordReader1, 99999);
+        RecordReaderDataSetIterator inputIter = new RecordReaderDataSetIterator(recordReader1, 99999);
 
         RecordReader recordReader2 = new CSVRecordReader(1, ",");
         recordReader2.initialize(new FileSplit(new ClassPathResource("sysos_lable.csv").getFile()));
-        DataSetIterator targetIter = new RecordReaderDataSetIterator(recordReader2, 99999);
+        RecordReaderDataSetIterator targetIter = new RecordReaderDataSetIterator(recordReader2, 99999);
 
         //1-2. convert to array
         ArrayList inputList = new ArrayList();
@@ -97,7 +96,7 @@ public class Sysos_Analysis {
                 .learningRate(0.2)
                 .momentum(0.5)
                 .regularization(true).l2(0.001).dropOut(0.5)
-                .list(2)
+                .list()
                 .layer(0, new GravesLSTM.Builder().nIn(numInputs).nOut(outputNum)
                         .updater(Updater.NESTEROVS)
                         .activation("tanh")

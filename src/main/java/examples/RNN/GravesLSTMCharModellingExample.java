@@ -1,5 +1,6 @@
-package com.exem;
+package examples.RNN;
 
+import examples.RNN.CharacterIterator;
 import org.apache.commons.io.FileUtils;
 import org.deeplearning4j.nn.api.Layer;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
@@ -11,7 +12,6 @@ import org.deeplearning4j.nn.conf.layers.GravesLSTM;
 import org.deeplearning4j.nn.conf.layers.RnnOutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.deeplearning4j.ui.weights.HistogramIterationListener;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
@@ -29,21 +29,19 @@ import java.util.Random;
  */
 public class GravesLSTMCharModellingExample {
     public static void main(String[] args) throws Exception {
-        int lstmLayerSize = 200;                    //Number of units in each GravesLSTM layer
-        int miniBatchSize = 32;                        //Size of mini batch to use when  training
+        int lstmLayerSize = 200;                     //Number of units in each GravesLSTM layer
+        int miniBatchSize = 32;                      //Size of mini batch to use when  training
         int exampleLength = 1000;                    //Length of each training example sequence to use. This could certainly be increased
-        int tbpttLength = 50;                       //Length for truncated backpropagation through time. i.e., do parameter updates ever 50 characters
-        int numEpochs = 1;                            //Total number of training epochs
-        int generateSamplesEveryNMinibatches = 10;  //How frequently to generate samples from the network? 1000 characters / 50 tbptt length: 20 parameter updates per minibatch
-        int nSamplesToGenerate = 4;                    //Number of samples to generate after each training epoch
-        int nCharactersToSample = 300;                //Length of each sample to generate
-        String generationInitialization = null;        //Optional character initialization; a random character is used if null
-        // Above is Used to 'prime' the LSTM with a character sequence to continue/complete.
-        // Initialization characters must all be in CharacterIterator.getMinimalCharacterSet() by default
+        int tbpttLength = 50;                        //Length for truncated backpropagation through time. i.e., do parameter updates ever 50 characters
+        int numEpochs = 1;                           //Total number of training epochs
+        int generateSamplesEveryNMinibatches = 10;   //How frequently to generate samples from the network? 1000 characters / 50 tbptt length: 20 parameter updates per minibatch
+        int nSamplesToGenerate = 4;                  //Number of samples to generate after each training epoch
+        int nCharactersToSample = 300;               //Length of each sample to generate
+        String generationInitialization = null;      //Optional character initialization; a random character is used if null
+
         Random rng = new Random(12345);
 
-        //Get a DataSetIterator that handles vectorization of text into something we can use to train
-        // our GravesLSTM network.
+        //Get a DataSetIterator that handles vectorization of text into something we can use to train.
         CharacterIterator iter = getShakespeareIterator(miniBatchSize, exampleLength);
         int nOut = iter.totalOutcomes();
 
@@ -70,8 +68,8 @@ public class GravesLSTMCharModellingExample {
 
         MultiLayerNetwork net = new MultiLayerNetwork(conf);
         net.init();
-//        net.setListeners(new ScoreIterationListener(1));
         net.setListeners(new HistogramIterationListener(1));
+
         //Print the  number of parameters in the network (and for each layer)
         Layer[] layers = net.getLayers();
         int totalNumParams = 0;
